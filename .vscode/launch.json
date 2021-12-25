@@ -1,0 +1,23 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "(Windows) 启动2",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "D:\\Study\\OpenGL2020.12\\VSCproj\\build\\Debug\\HelloGL.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            // 调试时是否显示控制台窗口，设置为true则显示在新的windows终端控制台
+            "externalConsole": false, 
+           
+        },
+      
+    ]
+}

@@ -1,0 +1,10 @@
+^D:\STUDY\OPENGL2020.12\VSCPROJ\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SD:/Study/OpenGL2020.12/VSCproj -BD:/Study/OpenGL2020.12/VSCproj/build --check-stamp-file D:/Study/OpenGL2020.12/VSCproj/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

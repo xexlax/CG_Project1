@@ -1,0 +1,3 @@
+D:/Study/OpenGL2020.12/VSCproj/build/CMakeFiles/HelloGL.dir
+D:/Study/OpenGL2020.12/VSCproj/build/CMakeFiles/ALL_BUILD.dir
+D:/Study/OpenGL2020.12/VSCproj/build/CMakeFiles/ZERO_CHECK.dir

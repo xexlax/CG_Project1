@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Study\OpenGL2020.12\VSCproj\build\CMakeFiles\bf09bcdd6c8c9702905f61c6ac4a8371\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{068A8C20-5E89-3ACF-91B8-62D41171CB58}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
