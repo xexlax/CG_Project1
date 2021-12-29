@@ -7,6 +7,12 @@
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\model_rendering.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="D:\Study\OpenGL2020.12\VSCproj\CMakeLists.txt" />

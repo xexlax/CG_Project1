@@ -20,4 +20,5 @@ link_directories(${LIB_PATH})
  
 aux_source_directory(./src DIR_SRCS)
 add_executable(HelloGL ${DIR_SRCS})
+
 target_link_libraries(HelloGL ${LIB_FILES})
