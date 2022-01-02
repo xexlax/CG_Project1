@@ -15,22 +15,24 @@ using namespace std;
 #include "headers/model.h"
 #include "headers/settings.h"
 #include "headers/skybox.h"
-bool close = false;
 
-Camera camera(glm::vec3(0.0f, 10.0f, 20.0f));
+//public variants
+Camera camera(glm::vec3(0.0f, 5.0f, 10.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
-glm::vec3 lightPos(10.0f, 19.0f, 10.0f);
-// timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+bool close = false;
 
 void processInput(GLFWwindow *window);
 void render_model(GLFWwindow *window, string dir)
 {
-
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glm::vec3 lightPos(10.0f, 19.0f, 10.0f);
+    firstMouse = true;
+    lastX = SCR_WIDTH / 2.0f;
+    lastY = SCR_HEIGHT / 2.0f;
+    
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
 
     // configure global opengl state
@@ -106,7 +108,6 @@ void render_model(GLFWwindow *window, string dir)
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
-
         ourModel.Draw(ourShader);
 
         // render the edge
@@ -131,61 +132,4 @@ void render_model(GLFWwindow *window, string dir)
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-}
-
-void processInput(GLFWwindow *window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-        camera.ProcessKeyboard(UPWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-        camera.ProcessKeyboard(DOWNWARD, deltaTime);
-}
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-    glViewport(0, 0, width, height);
-}
-
-// glfw: whenever the mouse moves, this callback is called
-// -------------------------------------------------------
-void mouse_callback(GLFWwindow *window, double xpos, double ypos)
-{
-    if (firstMouse)
-    {
-        lastX = float(xpos);
-        lastY = float(ypos);
-        firstMouse = false;
-    }
-
-    float xoffset = float(xpos - lastX);
-    float yoffset = float(lastY - ypos); // reversed since y-coordinates go from bottom to top
-
-    lastX = float(xpos);
-    lastY = float(ypos);
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
-}
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(float(yoffset));
 }
