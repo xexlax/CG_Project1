@@ -4,6 +4,9 @@
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\bazierface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\diymodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>

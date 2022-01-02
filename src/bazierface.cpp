@@ -1,5 +1,25 @@
 #include "headers/bezierface.h"
 using namespace std;
+#define step 50
+
+float defControlPoints[] = {
+   
+	3.0, 3.0,
+    3.0, 2.0,
+    3.0, 1.0,
+    3.0, 0.0,
+	0.0, 3.0,
+    1.0, 3.0,
+    2.0, 3.0,
+    3.0, 3.0,
+	0.0, 0.0,
+    1.0, 0.0,
+    2.0, 0.0,
+    3.0, 0.0,
+    	
+};
+
+
 void BezierFace::generate(int prec)
 {
 	numVertices = (prec + 1) * (prec + 1);
@@ -15,11 +35,7 @@ void BezierFace::generate(int prec)
 	{
 		indices.push_back(0);
 	}
-	for (int i = 0; i < (step + 1) * 3; i += 3)
-	{
-		//3个一组, xyz坐标
-		controlPointsVector.push_back(glm::vec3(controlPoints[i], controlPoints[i + 1], controlPoints[i + 2]));
-	}
+	
 	for (int i = 0; i <= prec; i++)//i:从上到下
 	{
 
@@ -91,13 +107,21 @@ float BezierFace::Bernstein(float t, int index)
 	}
 	
 }
-BezierFace::BezierFace(){}
+BezierFace::BezierFace(){
 
-BezierFace::BezierFace(int step, float controlPoints[])
-{
-	this->step = step;
-	this->controlPoints = controlPoints;
-	generate(100);
+}
+
+// BezierFace::BezierFace(int i)
+// {
+// 	this->step = 3;
+// 	this->controlPoints = defControlPoints +8*i;
+// 	generate(100);
+// }
+
+BezierFace::BezierFace( vector<glm::vec2> vec){
+
+	controlPointsVector=vec;
+	generate(step);
 }
 
 int BezierFace::getNumVertices()

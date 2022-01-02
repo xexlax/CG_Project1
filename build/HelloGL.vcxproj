@@ -314,6 +314,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\bazierface.cpp" />
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\diymodel.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\glad.c" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\main.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\model_rendering.cpp" />
