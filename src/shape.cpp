@@ -15,38 +15,46 @@ using namespace std;
 #include "headers/bezierface.h"
 #include "headers/diymodel.h"
 #include "headers/skybox.h"
+#include "headers/cursor.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "headers/stb_image.h"
 
-
-
+extern float lastX ,lastY;
+extern bool MouseDown,PointSelect,firstMouse;
+void mouse_callback_shape(GLFWwindow *window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 extern float deltaTime;
 extern float lastFrame;
 void processInput(GLFWwindow *window);
 extern Camera camera;
 
-bool notChange=true;
 
+bool notChange=true;
+DIYmodel diymodel;
 
 void display(GLFWwindow *window){
 
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
     GLuint VAO, VBO[3];
     GLuint VAO2, VBO2;
+    GLuint VAO3, VBO3;
     GLuint texture;
     glEnable(GL_DEPTH_TEST);
     glLineWidth(5.0);
     glPointSize(15.0);
      
 
-    DIYmodel diymodel;
+    
     SkyBox skyBox;
 
     vector<float> pvalues;  //顶点坐标
 	vector<float> tvalues;  //纹理坐标
 	vector<float> nvalues;  //法线
     vector <float> fpvalues;//锚点坐标
+    vector <float> apvalues;//锚点坐标
     
     int totalindex,findex;
     
@@ -76,6 +84,7 @@ void display(GLFWwindow *window){
     Shader ourShader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\shader.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\shader.fs");
     Shader frameShader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\edge.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\edge.fs");
     Shader skyShader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\skybox.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\skybox.fs");
+    Shader cursorShader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\cursor.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\cursor.fs");
 
     ourShader.setFloat("material.shininess", 16.0f);
     ourShader.setVec3("light.ambient", 0.8f, 0.8f, 0.85f);
@@ -87,7 +96,8 @@ void display(GLFWwindow *window){
     ourShader.setFloat("light.quadratic", 0.01f);
     glm::vec3 lightPos(10.0f, 10.0f, 10.0f);
     while(!glfwWindowShouldClose(window)){
-        
+        diymodel.remake();
+      
         totalindex=diymodel.load_model(&pvalues,&tvalues,&nvalues);
 
         glGenVertexArrays(1, &VAO);
@@ -99,6 +109,7 @@ void display(GLFWwindow *window){
 	    glBufferData(GL_ARRAY_BUFFER, tvalues.size()*4, &tvalues[0], GL_STREAM_DRAW);
 	    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
 	    glBufferData(GL_ARRAY_BUFFER, nvalues.size()*4, &nvalues[0], GL_STREAM_DRAW);
+        notChange=true;
 
 
         
@@ -113,6 +124,7 @@ void display(GLFWwindow *window){
         lastFrame = currentFrame;
 
         processInput(window);
+        if(notChange==false)break;
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -122,7 +134,7 @@ void display(GLFWwindow *window){
         ourShader.use();
 
 
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 1200.0f / 800.0f, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
 
@@ -167,8 +179,15 @@ void display(GLFWwindow *window){
         glBindBuffer(GL_ARRAY_BUFFER, VBO2);
 	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
 
+        bool active = diymodel.load_active(&apvalues);
+        if(active){
+        glGenVertexArrays(1, &VAO3);
+	    glGenBuffers(1, &VBO3);
+	    glBindVertexArray(VAO3);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+	    glBufferData(GL_ARRAY_BUFFER, apvalues.size()*4, &apvalues[0], GL_STREAM_DRAW);
+}
 
-        
 
         glDisable(GL_DEPTH_TEST);
         frameShader.use();
@@ -178,7 +197,6 @@ void display(GLFWwindow *window){
         frameShader.setVec3("color",glm::vec3(1.0,0.7,0.3));
         glBindBuffer(GL_ARRAY_BUFFER, VBO2);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-
         glEnableVertexAttribArray(0);
       
         glDrawArrays(GL_LINE_STRIP, 0, findex);
@@ -186,6 +204,18 @@ void display(GLFWwindow *window){
         frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
 
         glDrawArrays(GL_POINTS, 0, findex);
+
+
+        if(active){
+        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+        frameShader.setVec3("color",glm::vec3(1.0,0.0,0.0));
+
+        glDrawArrays(GL_POINTS, 0, 1);
+        }
+
+      
         glEnable(GL_DEPTH_TEST);
 
         
@@ -200,4 +230,88 @@ void display(GLFWwindow *window){
 
 
 
+}
+
+
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        int point;
+        switch (button)
+        {
+            case GLFW_MOUSE_BUTTON_LEFT:
+            //左键：选择拖拽
+                MouseDown=true;
+                
+                point=diymodel.get_point(lastX,lastY,camera);
+                if(point>=0){
+                    cout<<"click point "<<point<<"at"<<lastX<<","<<lastY<<endl;
+                    PointSelect=true;
+                }
+                else{
+                      cout<<"click no point "<<"at"<<lastX<<","<<lastY<<endl;
+                      PointSelect=false;
+                }
+                
+                break;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+            //中键,创建新节点
+                point=diymodel.get_line_start_point(lastX,lastY,camera);
+                if(point>=0){
+                    diymodel.split_point(point);
+                    notChange=false;
+                }
+                else{
+                      
+                }
+                break;
+            case GLFW_MOUSE_BUTTON_RIGHT:
+            //右键，删除节点
+                
+                point=diymodel.get_point(lastX,lastY,camera);
+                if(point>=0){
+                    diymodel.remove_point(point);
+                    notChange=false;
+                   
+                }
+                else{
+                      
+                }
+                break;
+            default:
+                return;
+        }
+    }
+    else{
+        MouseDown=false;
+        PointSelect=false;}
+    return;
+}
+
+
+
+void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+{
+    if (firstMouse)
+    {
+        lastX = float(xpos);
+        lastY = float(ypos);
+        firstMouse = false;
+    }
+
+    float xoffset = float(xpos - lastX);
+    float yoffset = float(lastY - ypos); // reversed since y-coordinates go from bottom to top
+
+    lastX = float(xpos);
+    lastY = float(ypos);
+    
+    if(MouseDown&&!PointSelect)
+    camera.ProcessMouseMovement(xoffset, yoffset);
+
+    if(PointSelect){
+        diymodel.modify_point(xoffset,yoffset);
+        notChange=false;
+    }
 }

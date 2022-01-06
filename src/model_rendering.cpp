@@ -17,7 +17,7 @@ using namespace std;
 #include "headers/skybox.h"
 
 //public variants
-Camera camera(glm::vec3(0.0f, 5.0f, 10.0f));
+Camera camera(glm::vec3(0.0f, 5.0f, 20.0f));
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;

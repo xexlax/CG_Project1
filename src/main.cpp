@@ -3,22 +3,21 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-
 #include "headers/settings.h"
 #include "headers/camera.h"
 extern Camera camera;
-extern float lastX,  lastY, deltaTime, lastFrame;
+extern float lastX, lastY, deltaTime, lastFrame;
 extern bool firstMouse;
-
-
+bool MouseDown = false;
+bool PointSelect = false;
 
 void display(GLFWwindow *window);
 
 extern void render_model(GLFWwindow *window, std::string dir);
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+extern void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 int main()
 {
@@ -36,7 +35,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CGProject", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CGProject", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -48,25 +47,22 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     display(window);
 
     //render_model(window,"lumine\\lumine.pmx");
     //render_model(window,"paimon\\paimon.pmx");
-   // render_modeling(window);
+    // render_modeling(window);
 
-    
     glfwTerminate();
     return 0;
 }
-
 
 void processInput(GLFWwindow *window)
 {
@@ -89,26 +85,8 @@ void processInput(GLFWwindow *window)
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
-   
+
     glViewport(0, 0, width, height);
-}
-
-void mouse_callback(GLFWwindow *window, double xpos, double ypos)
-{
-    if (firstMouse)
-    {
-        lastX = float(xpos);
-        lastY = float(ypos);
-        firstMouse = false;
-    }
-
-    float xoffset = float(xpos - lastX);
-    float yoffset = float(lastY - ypos); // reversed since y-coordinates go from bottom to top
-
-    lastX = float(xpos);
-    lastY = float(ypos);
-
-    camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called

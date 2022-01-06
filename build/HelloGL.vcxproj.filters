@@ -4,6 +4,9 @@
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\bazierface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\cursor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\diymodel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -20,6 +23,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\skybox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\toolbar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
