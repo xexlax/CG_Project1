@@ -1,4 +1,5 @@
 #include "headers/bezierface.h"
+#include <cmath>
 using namespace std;
 #define step 50
 
@@ -44,8 +45,11 @@ void BezierFace::generate(int prec)
 			float y = 0.0f;
 			float z = 0.0f;
 			float r = 0.0f;
+			float r1 =0.0f;
+			float y1 =0.0f;
 			
 			float u = (float)i / prec;
+			float u1 = (float)(i+1) / prec;
 			float v = (float)j / prec;
 			float theta=toRadians(v);
 
@@ -53,17 +57,39 @@ void BezierFace::generate(int prec)
 			{
 					int index = k;
 					r += controlPointsVector[index].x * Bernstein(u, k);
+					r1 += controlPointsVector[index].x * Bernstein(u1, k);
 					y += controlPointsVector[index].y * Bernstein(u, k);
+					y1 += controlPointsVector[index].y * Bernstein(u1, k);
 				
 			}
 			x=r*cos(theta);
 			z=r*sin(theta);
 
-			
+			u=texrange_l+(texrange_r-texrange_l)*u;
 		
 			vertices[i*(prec+1)+j] = glm::vec3(x, y, z);
-			normals[i*(prec+1)+j] = glm::vec3(x, y, z);
-			texCoords[i*(prec+1)+j] = glm::vec2(u,v);
+
+			float nx= cos(theta);
+			float nz= sin(theta);
+			//dy/dr= nr/-ny
+			float ny;
+			
+			float mu=0.0001;
+			if(y1-y<mu&&y-y1<mu){
+				nx=0;
+				nz=0;
+				ny=-1;
+			}
+			else ny=-(1.0)*(r1-r)/(y1-y);
+
+			if(y1-y<0&&r1-r<0){
+				nx=-nx;
+				nz=-nz;
+				ny=-ny;
+
+			}
+			normals[i*(prec+1)+j] = glm::vec3(nx, ny, nz);
+			texCoords[i*(prec+1)+j] = glm::vec2(v,u);
 		}
 	}
 	//计算索引
@@ -118,9 +144,12 @@ BezierFace::BezierFace(){
 // 	generate(100);
 // }
 
-BezierFace::BezierFace( vector<glm::vec2> vec){
+BezierFace::BezierFace( vector<glm::vec2> vec,float l,float r){
 
 	controlPointsVector=vec;
+	texrange_r=r;
+	texrange_l=l;
+	
 	generate(step);
 }
 
@@ -153,4 +182,5 @@ vector<int> BezierFace::getIndices()
 {
 	return indices;
 }
+
 

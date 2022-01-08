@@ -1,9 +1,19 @@
+#include <windows.h>
+#include <commdlg.h>
+#include <fstream>
+using namespace std;
+
 #include "headers/diymodel.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "headers/camera.h"
 #include "headers/settings.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "headers/stb_image.h"
+
+
 float defPoints[] = {
    
     0.0, 0.0, 1,
@@ -19,7 +29,7 @@ float defPoints[] = {
 	
     	
 };
-
+//加载单点到数组
 bool DIYmodel::load_active(vector<float>* pvalues){
     pvalues->clear();
     if(active_point<0) return false;
@@ -28,7 +38,7 @@ bool DIYmodel::load_active(vector<float>* pvalues){
     pvalues->push_back(p.y);
     return true;
 }
-
+//加载线框模型到数组
 int DIYmodel::load_frame(vector<float>* pvalues){
     pvalues->clear();
     int index=0;
@@ -41,7 +51,7 @@ int DIYmodel::load_frame(vector<float>* pvalues){
     return index;
 
 }
-
+//加载模型到数组
 int DIYmodel::load_model(vector<float>* pvalues,vector<float>* tvalues,vector<float>* nvalues){
     int index=0;
     pvalues->clear();
@@ -69,28 +79,66 @@ int DIYmodel::load_model(vector<float>* pvalues,vector<float>* tvalues,vector<fl
     return index;
 }
 
+//初始化
 void DIYmodel::init(){
     active_point=-1;
-
-    
     for(int i=0;i<10;i++){
         vertices.push_back(glm::vec3(defPoints[3*i],defPoints[3*i+1],defPoints[3*i+2]));
     }
     makeFaces();
 }
 
+//初始化建立面
 void DIYmodel::makeFaces(){
     faces.clear();
+    float totlength=0;
     for(int i=0;i+9 <30;i+=9){
         vector<glm::vec2> vec;
         for(int j=0;j<4;j++)
-            vec.push_back(glm::vec2(defPoints[i+3*j],defPoints[i+3*j+1]));
+        vec.push_back(glm::vec2(defPoints[i+3*j],defPoints[i+3*j+1]));
+        
         
         BezierFace bf=BezierFace(vec);
+        
         faces.push_back(bf);
     }
 
 }
+
+//刷新
+void DIYmodel::remake(){
+    faces.clear();
+    float totl=0;
+    vector<float> lengths;
+    for(int i=0;i+3<vertices.size() ;i+=3){
+        for(int j=0;j<3;j++){           
+            float t=(vertices[i+j+1].x-vertices[i+j].x)
+            *(vertices[i+j+1].x-vertices[i+j].x)+
+            (vertices[i+j+1].y-vertices[i+j].y)
+            *(vertices[i+j+1].y-vertices[i+j].y);
+		    totl+=sqrt(t);	
+            lengths.push_back(sqrt(t));
+        }
+    }
+
+    float offset=0;
+
+    for(int i=0;i+3<vertices.size() ;i+=3){
+        vector<glm::vec2> vec;
+        
+        for(int j=0;j<4;j++)
+            vec.push_back(glm::vec2(vertices[i+j].x,vertices[i+j].y));
+        
+        float l=offset;
+        float r=l+(lengths[i]+lengths[i+1]+lengths[i+2])/totl;
+        BezierFace bf=BezierFace(vec,l,r);
+        offset=r;
+        
+        faces.push_back(bf);
+    }
+
+}
+
 
 DIYmodel::DIYmodel(){
     init();
@@ -125,29 +173,6 @@ glm::vec4 wild_screen_baroque(glm::vec4 pos,glm::mat4 view,glm::mat4 projection)
 
 }
 
-int DIYmodel::get_point(float x,float y,Camera camera){
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    float zc=camera.Position.z;
-    
-    for(int i=0;i<vertices.size();i++){
-        glm::vec4 pos(vertices[i].x,vertices[i].y,0.0,1.0);
-        pos=wild_screen_baroque(pos,view,projection);
-        
-  //     cout<<"point "<<i<<"at"<<pos.x<<","<<pos.y<<endl;
-        
-
-        if(clamp(pos.x,x,10.0)&&clamp(pos.y,y,10.0)){
-            active(i);
-            return i;
-        }
-
-
-        
-    }
-    return -1;
-}
-
 void DIYmodel::active(int index){
     if(index==active_point){
         active_point=-1;
@@ -156,7 +181,7 @@ void DIYmodel::active(int index){
         active_point=index;
     }
 }
-
+//移动节点
 void DIYmodel::modify_point(float dx,float dy){
     if(active_point<0) return;
     else{
@@ -164,19 +189,7 @@ void DIYmodel::modify_point(float dx,float dy){
         vertices[active_point].y+=dy/50;
     }
 }
-void DIYmodel::remake(){
-    faces.clear();
-    for(int i=0;i+3<vertices.size() ;i+=3){
-        vector<glm::vec2> vec;
-        for(int j=0;j<4;j++)
-            vec.push_back(glm::vec2(vertices[i+j].x,vertices[i+j].y));
-        
-        BezierFace bf=BezierFace(vec);
-        faces.push_back(bf);
-    }
-
-}
-
+//删除节点
 void DIYmodel::remove_point(int pid){
     if(pid<=0) return;
     if(pid==vertices.size()-1) return;
@@ -198,7 +211,7 @@ void DIYmodel::remove_point(int pid){
     }
 
 }
-
+//新建节点
 void DIYmodel::split_point(int pid){
     if(pid<0) return;
     int i=0;
@@ -227,6 +240,31 @@ void DIYmodel::split_point(int pid){
 
 }
 
+//根据鼠标查找线段
+int DIYmodel::get_point(float x,float y,Camera camera){
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    float zc=camera.Position.z;
+    
+    for(int i=0;i<vertices.size();i++){
+        glm::vec4 pos(vertices[i].x,vertices[i].y,0.0,1.0);
+        pos=wild_screen_baroque(pos,view,projection);
+        
+  //     cout<<"point "<<i<<"at"<<pos.x<<","<<pos.y<<endl;
+        
+
+        if(clamp(pos.x,x,10.0)&&clamp(pos.y,y,10.0)){
+            active(i);
+            return i;
+        }
+
+
+        
+    }
+    return -1;
+}
+
+//根据鼠标查找线段
 int DIYmodel::get_line_start_point(float x,float y,Camera camera){
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
@@ -254,3 +292,120 @@ int DIYmodel::get_line_start_point(float x,float y,Camera camera){
     return -1;
 
 }
+
+void DIYmodel::load_from_file(){
+    OPENFILENAME ofn;      // 公共对话框结构。   
+	TCHAR szFile[MAX_PATH]; // 保存获取文件名称的缓冲区。             
+	// 初始化选择文件对话框。   
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));  
+	ofn.lStructSize = sizeof(OPENFILENAME);  
+	ofn.hwndOwner = NULL;  
+	ofn.lpstrFile = szFile;  
+	ofn.lpstrFile[0] = '\0'; 
+	ofn.nMaxFile = sizeof(szFile);  
+	ofn.lpstrFilter = "All(*.*)\0*.*\0Text(*.txt)\0*.TXT\0\0";  
+	ofn.nFilterIndex = 1;  
+	ofn.lpstrFileTitle = NULL;  
+	ofn.nMaxFileTitle = 0;  
+	ofn.lpstrInitialDir = NULL;  
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;  
+	//ofn.lpTemplateName =  MAKEINTRESOURCE(ID_TEMP_DIALOG);  
+	// 显示打开选择文件对话框。   
+ 
+	if ( GetOpenFileName(&ofn) )  
+	{  
+		//显示选择的文件。   
+		ifstream is;
+        is.open(szFile);
+        glm::vec3 t;
+        vertices.clear();
+
+        while (is>>t.x)
+        {
+            is>>t.y>>t.z;
+            vertices.push_back(t);
+
+        }
+        
+
+        is.close();
+
+
+
+
+	} 
+}
+
+void DIYmodel::save_file(){
+    OPENFILENAME ofn;      // 公共对话框结构。   
+	TCHAR szFile[MAX_PATH]; // 保存获取文件名称的缓冲区。             
+	// 初始化选择文件对话框。   
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));  
+	ofn.lStructSize = sizeof(OPENFILENAME);  
+	ofn.hwndOwner = NULL;  
+	ofn.lpstrFile = szFile;  
+	ofn.lpstrFile[0] = '\0'; 
+	ofn.nMaxFile = sizeof(szFile);  
+	ofn.lpstrFilter = "All(*.*)\0*.*\0Text(*.txt)\0*.TXT\0\0";  
+	ofn.nFilterIndex = 1;  
+	ofn.lpstrFileTitle = NULL;  
+	ofn.nMaxFileTitle = 0;  
+	ofn.lpstrInitialDir = NULL;  
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;  
+	//ofn.lpTemplateName =  MAKEINTRESOURCE(ID_TEMP_DIALOG);  
+	// 显示打开选择文件对话框。   
+ 
+	if ( GetSaveFileName(&ofn) )  
+	{  
+		
+        ofstream os;
+        os.open(strcat(szFile,".diy"));
+
+        for(auto x:vertices){
+            os<<x.x<<' '<<x.y<<' '<<x.z<<endl;
+        }
+
+        os.close();
+
+
+
+
+        
+	} 
+
+}
+
+void DIYmodel::Draw(Camera c,Shader s){
+
+}
+
+GLuint DIYmodel::load_texture(string s){
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int width, height, nrChannels;
+    // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+    unsigned char *data = stbi_load(s.c_str(), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+    DIYtexture basic(0,1,0,1,texture);
+    textures.push_back(basic);
+    return texture;
+
+}
+
