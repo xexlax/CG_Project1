@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <commdlg.h>
+#include <cmath>
 #include <fstream>
 using namespace std;
 
@@ -12,6 +13,7 @@ using namespace std;
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "headers/stb_image.h"
+
 
 string basic_texs[]={
     
@@ -86,10 +88,33 @@ int DIYmodel::load_model(vector<float>* pvalues,vector<float>* tvalues,vector<fl
     return index;
 }
 
+int DIYmodel::load_circle(vector<float>* pvalues,int tid,bool lor){
+    pvalues->clear();
+    float y,r,pos;
+    if(lor){
+        pos=textures[tid].l;
+    }
+    else pos=textures[tid].r;
+    for(BezierFace f:faces){
+        if(f.getRadiance(pos,y,r)){
+            for(float j=0; j<=100; j++){
+                double theta=j/100 *2*3.14159;
+                pvalues->push_back(r*cos(theta));
+                pvalues->push_back(y);
+                pvalues->push_back(r*sin(theta));
+            }
+            return 303;
+        }
+    }
+
+
+
+}
+
 //初始化
 void DIYmodel::init(){
     active_point=-1;
-    active_tex=-1;
+    active_tex=0;
     material_idx=0;
     for(int i=0;i<10;i++){
         vertices.push_back(glm::vec3(defPoints[3*i],defPoints[3*i+1],defPoints[3*i+2]));
@@ -205,11 +230,14 @@ void DIYmodel::active(int index){
     }
 }
 //移动节点
-void DIYmodel::modify_point(float dx,float dy){
+void DIYmodel::modify_point(float dx,float dy,Camera camera){
     if(active_point<0) return;
     else{
-        vertices[active_point].x+=dx/50;
-        vertices[active_point].y+=dy/50;
+        float dist=1000/camera.Position.z;
+
+
+        vertices[active_point].x+=dx/(dist);
+        vertices[active_point].y+=dy/(dist);
     }
 }
 //删除节点
@@ -308,9 +336,6 @@ int DIYmodel::get_line_start_point(float x,float y,Camera camera){
         bool c3=(y<pos0.y+5&&y>pos1.y-5)||(y<pos1.y+5&&y>pos0.y-5);//在线段上
         if((c1||c0)&&c2&&c3)
             return i;
-
-
-        
     }
     return -1;
 
@@ -364,9 +389,9 @@ void DIYmodel::load_from_file(){
 
         for (int i=0;i<size;i++)
         {
-            is>>dt.type>>dt.repeat>>dt.l>>dt.r;
+            is>>dt.type>>dt.repeat>>dt.l>>dt.r>>dt.name;
+            load_texture(dt.name,dt);
             textures.push_back(dt);
-
         }
         
 
@@ -413,7 +438,7 @@ void DIYmodel::save_file(){
 
         os<<"texs_begin"<<' '<<textures.size()<<endl;
         for(auto x:textures){
-            os<<x.type<<' '<<x.repeat<<' '<<x.l<<' '<<x.r<<endl;
+            os<<x.type<<' '<<x.repeat<<' '<<x.l<<' '<<x.r<<' '<<x.name<<endl;
         }
 
         os<<"texs_end"<<endl;
@@ -432,10 +457,7 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
 
         ourShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-
-       
-        
+        glm::mat4 view = camera.GetViewMatrix();       
 
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -458,19 +480,21 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, material.map);
+         ourShader.setInt("s",0);
 
-        // int texnum=textures.size();
-        // for(int i=0;i<texnum;i++){
-        //     glActiveTexture(GL_TEXTURE1+i);
-        //     glBindTexture(GL_TEXTURE_2D, textures[i].map);
-        // }
+        int texnum=textures.size();
+        for(int i=0;i<texnum;i++){
+            glActiveTexture(GL_TEXTURE1+i);
+            glBindTexture(GL_TEXTURE_2D, textures[i].map);
+        }
 
-        // ourShader.setInt("texnum",texnum);
-        // for(int i=0;i<texnum;i++){
-        //     ourShader.setFloat("trange_l["+to_string(i)+"]",textures[i].l);
-        //     ourShader.setFloat("trange_r["+to_string(i)+"]",textures[i].r);
-        //     ourShader.setInt("texs["+to_string(i)+"]",textures[i].map);
-        // }
+        ourShader.setInt("texnum",texnum);
+        for(int i=0;i<texnum;i++){
+            ourShader.setFloat("trange_l["+to_string(i)+"]",textures[i].l);
+            ourShader.setFloat("trange_r["+to_string(i)+"]",textures[i].r);
+            ourShader.setInt("texs["+to_string(i)+"]",i+1);
+            ourShader.setInt("repeat["+to_string(i)+"]",textures[i].repeat);
+        }
         
 
         //glEnable(GL_CULL_FACE);
@@ -541,6 +565,42 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
 
 }
 
+void DIYmodel::DrawTexFrame(Camera camera,Shader frameShader,bool texframedisplay){
+        fpvalues.clear();
+        if(textures.size()==0) return;
+        findex=load_circle(&fpvalues,active_tex,true);
+        
+        glGenVertexArrays(1, &VAO2);
+	    glGenBuffers(1, &VBO2);
+	    glBindVertexArray(VAO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
+
+
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
+
+        glDisable(GL_DEPTH_TEST);
+        frameShader.use();
+        frameShader.setMat4("projection", projection);
+        frameShader.setMat4("view", view);
+        frameShader.setMat4("model", model);
+        frameShader.setVec3("color",glm::vec3(0.5,0.5,0.0));
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+      
+        if(texframedisplay)        
+        glDrawArrays(GL_LINE_STRIP, 0, findex-3);
+        
+      
+        glEnable(GL_DEPTH_TEST);
+
+
+}
+
+
 
 GLuint DIYmodel::load_texture(string s,DIYtexture &diytex){
     GLuint texture;
@@ -605,7 +665,13 @@ void DIYmodel::add_texture(){
 	if ( GetOpenFileName(&ofn) )  
 	{  
         load_texture(szFile,newtx);
+        newtx.l=0.3;
+        newtx.r=0.4;
+        newtx.repeat=4;
+        newtx.name=szFile;
+        active_tex=textures.size();
         textures.push_back(newtx);
+        
 	} 
 
 }

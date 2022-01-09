@@ -37,6 +37,8 @@ extern Camera camera;
 bool notChange=true;
 bool framedisplay=false;
 bool framelock=false;
+bool texframedisplay=false;
+bool texframelock=false;
 DIYmodel diymodel;
 
 
@@ -46,6 +48,9 @@ extern void Shader_Init();
 
 void display_shape(GLFWwindow *window){
     glEnable(GL_FRAMEBUFFER_SRGB);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     Shader_Init();
@@ -77,6 +82,7 @@ void display_shape(GLFWwindow *window){
         diymodel.Draw(camera,ourShader,lightPos);
         skyBox.Draw(camera,skyShader);
         diymodel.DrawFrame(camera,frameShader,framedisplay);
+        diymodel.DrawTexFrame(camera,frameShader,texframedisplay);
         
 
         glfwSwapBuffers(window);
@@ -129,7 +135,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                 if(point>=0){
                     diymodel.remove_point(point);
                     notChange=false;
-                   
                 }
                 else{
                       
@@ -166,7 +171,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 
     if(PointSelect){
-        diymodel.modify_point(xoffset,yoffset);
+        diymodel.modify_point(xoffset,yoffset,camera);
         notChange=false;
         cout<<"selecting"<<endl;
     }
@@ -204,6 +209,13 @@ void processInput(GLFWwindow *window)
         }
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
         framelock=false;
+
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS&&texframelock==false)
+        {texframedisplay=!texframedisplay;
+        texframelock=true;        
+        }
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE)
+        texframelock=false;
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS&&B_lock==false)
         {diymodel.switch_material();

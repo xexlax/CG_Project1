@@ -19,25 +19,36 @@ struct Material {
     float     shininess;
 }; 
 uniform sampler2D s;
-uniform sampler2D texs[4];
+uniform sampler2D texs[10];
+
 
 uniform Material material;
 uniform vec3 viewPos;
 uniform Light light;
 uniform int texnum;
-uniform float trange_l[4];
-uniform float trange_r[4];
+uniform float trange_l[10];
+uniform  int repeat[10];
+uniform float trange_r[10];
 
 void main()
 {
     
     vec3 texcolor=vec3(texture(s, TexCoord));
 
-    // for(int i=0;i<texnum;i++){
-    //     if(texture(texs[i], TexCoord).a==1){
-    //         texcolor=texture(texs[i], TexCoord);
-    //     }
-    // }
+
+    if(texnum>=1)
+    //texcolor= vec3(mix(texture(texs1, TexCoord), texture(s, TexCoord), 0.2));
+    
+    for(int i=0;i<texnum;i++){
+          vec2 TexCoordV=TexCoord;
+          float len=trange_r[i]-trange_l[i];
+          if(TexCoordV.y>trange_l[i]&&TexCoordV.y<trange_r[i]){
+              TexCoordV.y=(TexCoordV.y-trange_l[i])/len;
+              TexCoordV.x=(4*TexCoordV.x);
+              texcolor=vec3(texture(texs[i], TexCoordV));
+          }
+          
+    }
 
 	vec3 ambient  =light.ambient*texcolor;
     // diffuse 

@@ -20,11 +20,25 @@ float defControlPoints[] = {
     	
 };
 
+bool BezierFace::getRadiance(float pos,float &y, float &r){
+	if(pos<texrange_l||pos>texrange_r)return false;
+	for(int i=0;i<us.size();i++){
+		if(pos-us[i]<0.01){
+			y=ys[i];
+			r=rs[i];
+			return true;
+		}
+	}
+	return false;
+
+}
+
 
 void BezierFace::generate(int prec)
 {
 	numVertices = (prec + 1) * (prec + 1);
 	numIndices = prec * prec * 6;
+	us.clear();
 	//初始化空白数组
 	for (int i = 0; i < numVertices; i++)
 	{
@@ -66,6 +80,9 @@ void BezierFace::generate(int prec)
 			z=r*sin(theta);
 
 			u=texrange_l+(texrange_r-texrange_l)*u;
+			us.push_back(u);
+			ys.push_back(y);
+			rs.push_back(r);
 		
 			vertices[i*(prec+1)+j] = glm::vec3(x, y, z);
 
