@@ -145,11 +145,9 @@ BezierFace::BezierFace(){
 // }
 
 BezierFace::BezierFace( vector<glm::vec2> vec,float l,float r){
-
 	controlPointsVector=vec;
 	texrange_r=r;
 	texrange_l=l;
-	
 	generate(step);
 }
 

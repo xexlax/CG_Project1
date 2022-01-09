@@ -10,7 +10,7 @@ out vec3 FragPos;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
+//uniform int repeat;
 
 
 void main()

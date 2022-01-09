@@ -5,7 +5,7 @@
 
 class SkyBox{
     public:
-    std::string dirpath="D:\\Study\\OpenGL2020.12\\VSCproj\\resources\\skybox";
+    std::string dirpath="..\\..\\resources\\skybox";
     std::vector<std::string> faces;
 
     unsigned int skyboxVAO, skyboxVBO;

@@ -15,7 +15,7 @@ UI::~UI(){
 }
 
 
-void UI::init(float x, float y, float w, float h){
+void UI::init(){
     // px=x*2/SCR_WIDTH-1;
     // py=1-y*2/SCR_HEIGHT;
     // width=w*2/SCR_WIDTH;

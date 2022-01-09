@@ -322,7 +322,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\shader_preloading.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\shape_phase.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\skybox.cpp" />
-    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\toolbar.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\ui.cpp" />
   </ItemGroup>
   <ItemGroup>

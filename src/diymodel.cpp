@@ -13,6 +13,13 @@ using namespace std;
 #define STB_IMAGE_IMPLEMENTATION
 #include "headers/stb_image.h"
 
+string basic_texs[]={
+    
+    "..//..//resources//purple.png",
+    "..//..//resources//purple_normal.png",
+    "..//..//resources//stone.jpg",
+
+};
 
 float defPoints[] = {
    
@@ -82,6 +89,8 @@ int DIYmodel::load_model(vector<float>* pvalues,vector<float>* tvalues,vector<fl
 //初始化
 void DIYmodel::init(){
     active_point=-1;
+    active_tex=-1;
+    material_idx=0;
     for(int i=0;i<10;i++){
         vertices.push_back(glm::vec3(defPoints[3*i],defPoints[3*i+1],defPoints[3*i+2]));
     }
@@ -91,13 +100,11 @@ void DIYmodel::init(){
 //初始化建立面
 void DIYmodel::makeFaces(){
     faces.clear();
-    float totlength=0;
+
     for(int i=0;i+9 <30;i+=9){
         vector<glm::vec2> vec;
         for(int j=0;j<4;j++)
         vec.push_back(glm::vec2(defPoints[i+3*j],defPoints[i+3*j+1]));
-        
-        
         BezierFace bf=BezierFace(vec);
         
         faces.push_back(bf);
@@ -107,6 +114,9 @@ void DIYmodel::makeFaces(){
 
 //刷新
 void DIYmodel::remake(){
+    
+
+    load_texture(basic_texs[material_idx],material);
     faces.clear();
     float totl=0;
     vector<float> lengths;
@@ -136,6 +146,19 @@ void DIYmodel::remake(){
         
         faces.push_back(bf);
     }
+
+        totalindex=load_model(&pvalues,&tvalues,&nvalues);
+
+        glGenVertexArrays(1, &VAO);
+	    glGenBuffers(3, VBO);
+	    glBindVertexArray(VAO);
+	    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+	    glBufferData(GL_ARRAY_BUFFER, pvalues.size()*4, &pvalues[0], GL_STREAM_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+	    glBufferData(GL_ARRAY_BUFFER, tvalues.size()*4, &tvalues[0], GL_STREAM_DRAW);
+	    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+	    glBufferData(GL_ARRAY_BUFFER, nvalues.size()*4, &nvalues[0], GL_STREAM_DRAW);
+
 
 }
 
@@ -318,12 +341,31 @@ void DIYmodel::load_from_file(){
 		ifstream is;
         is.open(szFile);
         glm::vec3 t;
+        DIYtexture dt;
         vertices.clear();
+        textures.clear();
+        string s;
+        int size;
 
-        while (is>>t.x)
+        is>>s;//"material"
+        is>>material_idx;
+        is>>s;
+        is>>size;
+
+        for (int i=0;i<size;i++)
         {
-            is>>t.y>>t.z;
+            is>>t.x>>t.y>>t.z;
             vertices.push_back(t);
+
+        }
+
+        is>>s;
+        is>>size;
+
+        for (int i=0;i<size;i++)
+        {
+            is>>dt.type>>dt.repeat>>dt.l>>dt.r;
+            textures.push_back(dt);
 
         }
         
@@ -361,9 +403,20 @@ void DIYmodel::save_file(){
         ofstream os;
         os.open(strcat(szFile,".diy"));
 
+        os<<"material"<<endl;
+        os<<material_idx<<endl;
+        os<<"vertices_begin"<<' '<<vertices.size()<<endl;
+
         for(auto x:vertices){
             os<<x.x<<' '<<x.y<<' '<<x.z<<endl;
         }
+
+        os<<"texs_begin"<<' '<<textures.size()<<endl;
+        for(auto x:textures){
+            os<<x.type<<' '<<x.repeat<<' '<<x.l<<' '<<x.r<<endl;
+        }
+
+        os<<"texs_end"<<endl;
 
         os.close();
 
@@ -375,11 +428,121 @@ void DIYmodel::save_file(){
 
 }
 
-void DIYmodel::Draw(Camera c,Shader s){
+void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
+
+        ourShader.use();
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+
+       
+        
+
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+            
+        ourShader.setVec3("viewPos",camera.Position);
+        ourShader.setVec3("light.position", lightPos);
+
+    
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(2);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, material.map);
+
+        // int texnum=textures.size();
+        // for(int i=0;i<texnum;i++){
+        //     glActiveTexture(GL_TEXTURE1+i);
+        //     glBindTexture(GL_TEXTURE_2D, textures[i].map);
+        // }
+
+        // ourShader.setInt("texnum",texnum);
+        // for(int i=0;i<texnum;i++){
+        //     ourShader.setFloat("trange_l["+to_string(i)+"]",textures[i].l);
+        //     ourShader.setFloat("trange_r["+to_string(i)+"]",textures[i].r);
+        //     ourShader.setInt("texs["+to_string(i)+"]",textures[i].map);
+        // }
+        
+
+        //glEnable(GL_CULL_FACE);
+        //glFrontFace(GL_CCW);
+
+
+        //glPolygonMode(GL_FRONT_AND_BACK ,GL_LINE);
+        glDrawArrays(GL_TRIANGLES, 0, totalindex);
+
 
 }
 
-GLuint DIYmodel::load_texture(string s){
+void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
+        findex= load_frame(&fpvalues);
+        glGenVertexArrays(1, &VAO2);
+	    glGenBuffers(1, &VBO2);
+	    glBindVertexArray(VAO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
+
+        bool active = load_active(&apvalues);
+        if(active){
+        glGenVertexArrays(1, &VAO3);
+	    glGenBuffers(1, &VBO3);
+	    glBindVertexArray(VAO3);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+	    glBufferData(GL_ARRAY_BUFFER, apvalues.size()*4, &apvalues[0], GL_STREAM_DRAW);
+        }
+
+
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
+
+        glDisable(GL_DEPTH_TEST);
+        frameShader.use();
+        frameShader.setMat4("projection", projection);
+        frameShader.setMat4("view", view);
+        frameShader.setMat4("model", model);
+        frameShader.setVec3("color",glm::vec3(0.5,0.5,0.0));
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+      
+
+
+        if(framedisplay)        
+        glDrawArrays(GL_LINE_STRIP, 0, findex);
+        
+        frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
+
+        if(framedisplay)   
+        glDrawArrays(GL_POINTS, 0, findex);
+
+
+        if(active){
+        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+        frameShader.setVec3("color",glm::vec3(0.0,1.0,0.0));
+            if(framedisplay)   
+            glDrawArrays(GL_POINTS, 0, 1);
+        }
+
+      
+        glEnable(GL_DEPTH_TEST);
+
+
+}
+
+
+GLuint DIYmodel::load_texture(string s,DIYtexture &diytex){
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
@@ -403,9 +566,46 @@ GLuint DIYmodel::load_texture(string s){
         std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
-    DIYtexture basic(0,1,0,1,texture);
-    textures.push_back(basic);
+    diytex.map=texture;
+    if(s.find("top")) diytex.type=1;
+    
     return texture;
 
 }
 
+void DIYmodel::switch_material(){
+
+    material_idx+=1;
+    if(material_idx>=3) material_idx=0;
+}
+
+
+void DIYmodel::add_texture(){
+    DIYtexture newtx;
+
+    OPENFILENAME ofn;      // 公共对话框结构。   
+	TCHAR szFile[MAX_PATH]; // 保存获取文件名称的缓冲区。             
+	// 初始化选择文件对话框。   
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));  
+	ofn.lStructSize = sizeof(OPENFILENAME);  
+	ofn.hwndOwner = NULL;  
+	ofn.lpstrFile = szFile;  
+	ofn.lpstrFile[0] = '\0'; 
+	ofn.nMaxFile = sizeof(szFile);  
+	ofn.lpstrFilter = "All(*.*)\0*.*\0Text(*.txt)\0*.TXT\0\0";  
+	ofn.nFilterIndex = 1;  
+	ofn.lpstrFileTitle = NULL;  
+	ofn.nMaxFileTitle = 0;  
+	ofn.lpstrInitialDir = NULL;  
+
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;  
+	//ofn.lpTemplateName =  MAKEINTRESOURCE(ID_TEMP_DIALOG);  
+	// 显示打开选择文件对话框。   
+ 
+	if ( GetOpenFileName(&ofn) )  
+	{  
+        load_texture(szFile,newtx);
+        textures.push_back(newtx);
+	} 
+
+}

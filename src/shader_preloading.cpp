@@ -2,9 +2,9 @@
 
 Shader ourShader,frameShader,skyShader,smoothShader;
 void Shader_Init(){
-    ourShader=Shader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\shader.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\shader.fs");  
-    frameShader=Shader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\edge.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\edge.fs");
-    skyShader=Shader("D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\skybox.vs", "D:\\Study\\OpenGL2020.12\\VSCproj\\src\\shaders\\skybox.fs");
+    ourShader=Shader("..\\..\\src\\shaders\\shader.vs", "..\\..\\src\\shaders\\shader.fs");  
+    frameShader=Shader("..\\..\\src\\shaders\\edge.vs", "..\\..\\src\\shaders\\edge.fs");
+    skyShader=Shader("..\\..\\src\\shaders\\skybox.vs", "..\\..\\src\\shaders\\skybox.fs");
 
     ourShader.use();
     ourShader.setFloat("material.shininess", 16.0f);

@@ -49,51 +49,14 @@ void display_shape(GLFWwindow *window){
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     Shader_Init();
-
-    GLuint VAO, VBO[3];
-    GLuint VAO2, VBO2;
-    GLuint VAO3, VBO3;
-    
     glEnable(GL_DEPTH_TEST);
     glLineWidth(5.0);
-    glPointSize(15.0);
-     
-
-    
+    glPointSize(15.0);   
     SkyBox skyBox;
-
-    vector<float> pvalues;  //顶点坐标
-	vector<float> tvalues;  //纹理坐标
-	vector<float> nvalues;  //法线
-    vector <float> fpvalues;//锚点坐标
-    vector <float> apvalues;//锚点坐标
-    
-    int totalindex,findex;
-    
-    GLuint texture=diymodel.load_texture("D:\\Study\\OpenGL2020.12\\VSCproj\\resources\\purple.png");
-  
     glm::vec3 lightPos(12.0f, 30.0f, 5.0f);
     while(!glfwWindowShouldClose(window)){
         diymodel.remake();
-      
-        totalindex=diymodel.load_model(&pvalues,&tvalues,&nvalues);
-
-        glGenVertexArrays(1, &VAO);
-	    glGenBuffers(3, VBO);
-	    glBindVertexArray(VAO);
-	    glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-	    glBufferData(GL_ARRAY_BUFFER, pvalues.size()*4, &pvalues[0], GL_STREAM_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-	    glBufferData(GL_ARRAY_BUFFER, tvalues.size()*4, &tvalues[0], GL_STREAM_DRAW);
-	    glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-	    glBufferData(GL_ARRAY_BUFFER, nvalues.size()*4, &nvalues[0], GL_STREAM_DRAW);
         notChange=true;
-
-
-        
-       
-
-
     
     while (notChange&&!glfwWindowShouldClose(window))
     {
@@ -107,113 +70,19 @@ void display_shape(GLFWwindow *window){
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        
-
-        ourShader.use();
-
-
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
-
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
-        ourShader.setMat4("model", model);
-        
-        ourShader.setVec3("viewPos",camera.Position);
-        ourShader.setVec3("light.position", lightPos);
+        ourShader.setMat4("model",model);
 
        
-        
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(1);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO[2]);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(2);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-
-        //glEnable(GL_CULL_FACE);
-        //glFrontFace(GL_CCW);
-
-
-        //glPolygonMode(GL_FRONT_AND_BACK ,GL_LINE);
-        glDrawArrays(GL_TRIANGLES, 0, totalindex);
-
+        diymodel.Draw(camera,ourShader,lightPos);
         skyBox.Draw(camera,skyShader);
-
-
-        findex= diymodel.load_frame(&fpvalues);
-        glGenVertexArrays(1, &VAO2);
-	    glGenBuffers(1, &VBO2);
-	    glBindVertexArray(VAO2);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
-
-        bool active = diymodel.load_active(&apvalues);
-        if(active){
-        glGenVertexArrays(1, &VAO3);
-	    glGenBuffers(1, &VBO3);
-	    glBindVertexArray(VAO3);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
-	    glBufferData(GL_ARRAY_BUFFER, apvalues.size()*4, &apvalues[0], GL_STREAM_DRAW);
-        }
-
-
-
-
-        glDisable(GL_DEPTH_TEST);
-        frameShader.use();
-        frameShader.setMat4("projection", projection);
-        frameShader.setMat4("view", view);
-        frameShader.setMat4("model", model);
-        frameShader.setVec3("color",glm::vec3(0.5,0.5,0.0));
-        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(0);
-      
-
-
-        if(framedisplay)        
-        glDrawArrays(GL_LINE_STRIP, 0, findex);
-        
-        frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
-
-        if(framedisplay)   
-        glDrawArrays(GL_POINTS, 0, findex);
-
-
-        if(active){
-        glBindBuffer(GL_ARRAY_BUFFER, VBO3);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        glEnableVertexAttribArray(0);
-        frameShader.setVec3("color",glm::vec3(0.0,1.0,0.0));
-            if(framedisplay)   
-            glDrawArrays(GL_POINTS, 0, 1);
-        }
-
-      
-        glEnable(GL_DEPTH_TEST);
-
+        diymodel.DrawFrame(camera,frameShader,framedisplay);
         
 
         glfwSwapBuffers(window);
 		glfwPollEvents();
     }
-
-
     }
-
-
-
-
 }
 
 
@@ -299,8 +168,11 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     if(PointSelect){
         diymodel.modify_point(xoffset,yoffset);
         notChange=false;
+        cout<<"selecting"<<endl;
     }
 }
+
+bool B_lock=false;
 
 void processInput(GLFWwindow *window)
 {
@@ -322,15 +194,32 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
         diymodel.load_from_file();
         notChange=false;
-        
         }
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
         diymodel.save_file();
 
-     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS&&framelock==false)
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS&&framelock==false)
         {framedisplay=!framedisplay;
         framelock=true;        
         }
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
         framelock=false;
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS&&B_lock==false)
+        {diymodel.switch_material();
+        notChange=false;
+        B_lock=true;
+        
+        }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
+        B_lock=false;
+
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
+        diymodel.add_texture();
+        notChange=false;
+    }
+        
+
+
+    
 }
