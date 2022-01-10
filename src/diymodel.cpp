@@ -221,6 +221,7 @@ glm::vec4 wild_screen_baroque(glm::vec4 pos,glm::mat4 view,glm::mat4 projection)
 
 }
 
+
 void DIYmodel::active(int index){
     if(index==active_point){
         active_point=-1;
@@ -233,11 +234,21 @@ void DIYmodel::active(int index){
 void DIYmodel::modify_point(float dx,float dy,Camera camera){
     if(active_point<0) return;
     else{
-        float dist=1000/camera.Position.z;
+        float z=camera.Position.z;
+        float dist=1000/z;
+        if(z<0){
+            vertices[active_point].y+=dy/(-dist);
+            vertices[active_point].x+=dx/(dist);
+        }
+        else{
+            vertices[active_point].y+=dy/(dist);
+            vertices[active_point].x+=dx/(dist);
+        }
+        
 
-
-        vertices[active_point].x+=dx/(dist);
-        vertices[active_point].y+=dy/(dist);
+        
+        
+        
     }
 }
 //删除节点
@@ -291,6 +302,27 @@ void DIYmodel::split_point(int pid){
 
 }
 
+void DIYmodel::modify_circle(float dx,float dy,Camera camera,bool lor){
+    if(active_tex<0) return;
+    else{
+        float z=camera.Position.z;
+        if(z<0) z=0-z;
+        float dist=10000/z;
+        if(lor){
+            textures[active_tex].l+=dy/(dist);
+            if(textures[active_tex].l>1) textures[active_tex].l=0.999;
+            if(textures[active_tex].l<0) textures[active_tex].l=0;
+        }
+            
+        else{
+            textures[active_tex].r+=dy/(dist);
+            if(textures[active_tex].r>1) textures[active_tex].r=0.999;
+            if(textures[active_tex].r<0) textures[active_tex].r=0;
+        }
+    }
+
+}
+
 //根据鼠标查找线段
 int DIYmodel::get_point(float x,float y,Camera camera){
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
@@ -339,6 +371,51 @@ int DIYmodel::get_line_start_point(float x,float y,Camera camera){
     }
     return -1;
 
+}
+//根据鼠标寻找大圆
+int DIYmodel::get_circle(float x,float y,Camera camera,bool &lor){
+    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    float zc=camera.Position.z;
+
+    float yl,yr,r;
+    
+    
+    
+    for(int i=0;i<textures.size();i++){
+        for(BezierFace f:faces){
+            if(f.getRadiance(textures[i].l,yl,r)){
+                
+                break;
+            }
+        }
+        glm::vec4 pos(r,yl,0.0,1.0);
+        pos=wild_screen_baroque(pos,view,projection);
+        if(clamp(pos.y,y,10.0)){
+            lor=true;
+            active_tex=i;
+            return i;
+        }
+
+        for(BezierFace f:faces){
+            if(f.getRadiance(textures[i].r,yr,r)){
+                
+                break;
+            }
+        }
+        pos=glm::vec4(r,yr,0.0,1.0);
+        pos=wild_screen_baroque(pos,view,projection);
+        if(clamp(pos.x,x,10.0)&&clamp(pos.y,y,10.0)){
+        
+            lor=false;
+            active_tex=i;
+            return i;
+        }
+
+
+        
+    }
+    return -1;
 }
 
 void DIYmodel::load_from_file(){
@@ -494,6 +571,7 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
             ourShader.setFloat("trange_r["+to_string(i)+"]",textures[i].r);
             ourShader.setInt("texs["+to_string(i)+"]",i+1);
             ourShader.setInt("repeat["+to_string(i)+"]",textures[i].repeat);
+            ourShader.setInt("type["+to_string(i)+"]",textures[i].type);
         }
         
 
@@ -568,7 +646,21 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
 void DIYmodel::DrawTexFrame(Camera camera,Shader frameShader,bool texframedisplay){
         fpvalues.clear();
         if(textures.size()==0) return;
-        findex=load_circle(&fpvalues,active_tex,true);
+        
+
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
+
+       
+        frameShader.use();
+        frameShader.setMat4("projection", projection);
+        frameShader.setMat4("view", view);
+        frameShader.setMat4("model", model);
+        frameShader.setVec3("color",glm::vec3(0.0,0.5,0.5));
+
+for(int i=0;i<textures.size();i++){
+        findex=load_circle(&fpvalues,i,true);
         
         glGenVertexArrays(1, &VAO2);
 	    glGenBuffers(1, &VBO2);
@@ -576,26 +668,42 @@ void DIYmodel::DrawTexFrame(Camera camera,Shader frameShader,bool texframedispla
         glBindBuffer(GL_ARRAY_BUFFER, VBO2);
 	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
 
-
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
-
-        glDisable(GL_DEPTH_TEST);
-        frameShader.use();
-        frameShader.setMat4("projection", projection);
-        frameShader.setMat4("view", view);
-        frameShader.setMat4("model", model);
-        frameShader.setVec3("color",glm::vec3(0.5,0.5,0.0));
         glBindBuffer(GL_ARRAY_BUFFER, VBO2);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glEnableVertexAttribArray(0);
       
-        if(texframedisplay)        
-        glDrawArrays(GL_LINE_STRIP, 0, findex-3);
-        
-      
+        if(texframedisplay&&i==active_tex)        
+        glDrawArrays(GL_LINE_STRIP, 0, findex);
+
+        glDisable(GL_DEPTH_TEST);
+        frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
+        if(texframedisplay)     
+        glDrawArrays(GL_POINTS, 0, 1);
+
         glEnable(GL_DEPTH_TEST);
+
+        frameShader.setVec3("color",glm::vec3(0.5,0.0,0.5));
+
+        findex=load_circle(&fpvalues,i,false);
+        glGenVertexArrays(1, &VAO2);
+	    glGenBuffers(1, &VBO2);
+	    glBindVertexArray(VAO2);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	    glBufferData(GL_ARRAY_BUFFER, fpvalues.size()*4, &fpvalues[0], GL_STREAM_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(0);
+      
+        if(texframedisplay&&i==active_tex)        
+        glDrawArrays(GL_LINE_STRIP, 0, findex);
+        
+         glDisable(GL_DEPTH_TEST);
+          frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
+        if(texframedisplay)     
+        glDrawArrays(GL_POINTS, 0, 1);
+
+        glEnable(GL_DEPTH_TEST);
+}
 
 
 }
@@ -627,7 +735,7 @@ GLuint DIYmodel::load_texture(string s,DIYtexture &diytex){
     }
     stbi_image_free(data);
     diytex.map=texture;
-    if(s.find("top")) diytex.type=1;
+    diytex.type=0;
     
     return texture;
 
@@ -665,6 +773,7 @@ void DIYmodel::add_texture(){
 	if ( GetOpenFileName(&ofn) )  
 	{  
         load_texture(szFile,newtx);
+        
         newtx.l=0.3;
         newtx.r=0.4;
         newtx.repeat=4;
@@ -674,4 +783,26 @@ void DIYmodel::add_texture(){
         
 	} 
 
+}
+
+void DIYmodel::add_repeat(bool t){
+    if(t){
+        textures[active_tex].repeat++;
+    }
+    else
+    {
+        textures[active_tex].repeat--;
+        if(textures[active_tex].repeat <1) textures[active_tex].repeat=1;
+    }
+}
+
+void DIYmodel::trans_tex_type(){
+    textures[active_tex].type=1-textures[active_tex].type;
+}
+
+void DIYmodel::remove_texture(){
+    if(textures.size()<=0)return;
+    vector<DIYtexture>::iterator i= textures.begin()+active_tex;
+    active_tex-=1;
+    textures.erase(i);
 }

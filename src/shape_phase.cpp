@@ -91,13 +91,15 @@ void display_shape(GLFWwindow *window){
     }
 }
 
-
+bool lorSelection;
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (action == GLFW_PRESS )
     {
-        int point;
+        int point,circle;
+        bool lor;
+        
         switch (button)
         {
             case GLFW_MOUSE_BUTTON_LEFT:
@@ -114,6 +116,20 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                       cout<<"click no point "<<"at"<<lastX<<","<<lastY<<endl;
                       PointSelect=false;
                 }}
+
+                if(texframedisplay){
+                    circle=diymodel.get_circle(lastX,lastY,camera,lor);
+                    if(circle>=0){
+                        cout<<"click circ "<<circle<<"at"<<lastX<<","<<lastY<<endl;
+                    PointSelect=true;
+                    lorSelection=lor;
+                    }
+                    else{
+                        cout<<"click no point "<<"at"<<lastX<<","<<lastY<<endl;
+                      PointSelect=false;
+                }}
+
+                
                 
                 break;
             case GLFW_MOUSE_BUTTON_MIDDLE:
@@ -171,18 +187,25 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 
     if(PointSelect){
+        if(framedisplay)
         diymodel.modify_point(xoffset,yoffset,camera);
+        if(texframedisplay)
+        diymodel.modify_circle(xoffset,yoffset,camera,lorSelection);
         notChange=false;
         cout<<"selecting"<<endl;
     }
 }
 
 bool B_lock=false;
+bool Com_lock=false,Dot_lock=false;
+bool T_lock=false,R_lock=false;
 
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // 相机移动区
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -196,6 +219,28 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWNWARD, deltaTime);
 
+    //显示设置
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS&&framelock==false)
+        {
+        framedisplay=!framedisplay;
+        texframedisplay=false;
+        framelock=true;        
+        }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
+        framelock=false;
+
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS&&texframelock==false)
+        {
+        texframedisplay=!texframedisplay;
+        framedisplay=false;
+        texframelock=true;        
+        }
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE)
+        texframelock=false;
+
+   
+ 
+    //读写文件
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
         diymodel.load_from_file();
         notChange=false;
@@ -203,19 +248,14 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
         diymodel.save_file();
 
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS&&framelock==false)
-        {framedisplay=!framedisplay;
-        framelock=true;        
-        }
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
-        framelock=false;
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
+        diymodel.add_texture();
+        notChange=false;
+    }
 
-    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS&&texframelock==false)
-        {texframedisplay=!texframedisplay;
-        texframelock=true;        
-        }
-    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE)
-        texframelock=false;
+    
+
+    //材质选项
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS&&B_lock==false)
         {diymodel.switch_material();
@@ -226,10 +266,45 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE)
         B_lock=false;
 
-    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
-        diymodel.add_texture();
+    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS&&!T_lock){
+        diymodel.trans_tex_type();
         notChange=false;
+        T_lock=true;
     }
+     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE)
+        T_lock=false;
+        
+        
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS&&!R_lock){
+        diymodel.remove_texture();
+        notChange=false;
+        R_lock=true;
+    }
+     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
+        R_lock=false;
+        
+
+    
+
+
+
+     if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS&&Com_lock==false)
+        {
+        diymodel.add_repeat(false);
+        notChange=false;
+        Com_lock=true;
+        }
+    if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_RELEASE)
+        Com_lock=false;
+
+     if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS&&Dot_lock==false)
+        {
+        diymodel.add_repeat(true);
+        notChange=false;
+        Dot_lock=true;
+        }
+    if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_RELEASE)
+        Dot_lock=false;
         
 
 

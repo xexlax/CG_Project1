@@ -21,7 +21,7 @@ float defControlPoints[] = {
 };
 
 bool BezierFace::getRadiance(float pos,float &y, float &r){
-	if(pos<texrange_l||pos>texrange_r)return false;
+	if(pos<texrange_l||pos>=texrange_r)return false;
 	for(int i=0;i<us.size();i++){
 		if(pos-us[i]<0.01){
 			y=ys[i];

@@ -18,5 +18,5 @@ vertices_begin 16
 0.9 4.14 0
 0 3 1
 texs_begin 1
-1 4 0.3 0.4 D:\Study\OpenGL2020.12\VSCproj\resources\texture\side1.jpg
+0 4 0.3 0.4 D:\Study\OpenGL2020.12\VSCproj\resources\texture\side1.jpg
 texs_end

@@ -1,0 +1,21 @@
+material
+1
+vertices_begin 13
+0 0 1
+1 0 0
+2 0 0
+3 0 1
+4 2 0
+1.23784 2.32104 0
+1.67838 3.24078 0
+2.11892 4.16052 0
+2.55946 5.08026 0
+1.93868 5.09514 1
+1.09846 5.43783 0
+0.477364 5.53376 0
+-0.0136984 5.6027 1
+texs_begin 3
+0 4 0.447525 0.547464 D:\Study\OpenGL2020.12\VSCproj\resources\texture\side1.jpg
+0 4 0.27873 0.416173 D:\Study\OpenGL2020.12\VSCproj\resources\texture\side1.jpg
+1 4 0.844765 0.999167 D:\Study\OpenGL2020.12\VSCproj\resources\texture\top2.jpg
+texs_end
