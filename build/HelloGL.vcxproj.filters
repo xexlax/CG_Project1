@@ -16,7 +16,7 @@
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\model_rendering.cpp">
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\particles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\shader_preloading.cpp">
@@ -28,7 +28,7 @@
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\skybox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\ui.cpp">
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\table.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

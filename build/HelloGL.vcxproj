@@ -318,11 +318,11 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\diymodel.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\glad.c" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\main.cpp" />
-    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\model_rendering.cpp" />
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\particles.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\shader_preloading.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\shape_phase.cpp" />
     <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\skybox.cpp" />
-    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\ui.cpp" />
+    <ClCompile Include="D:\Study\OpenGL2020.12\VSCproj\src\table.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="D:\Study\OpenGL2020.12\VSCproj\build\ZERO_CHECK.vcxproj">

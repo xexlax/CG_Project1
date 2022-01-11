@@ -19,37 +19,47 @@ using namespace std;
 #include "headers/diymodel.h"
 #include "headers/skybox.h"
 #include "headers/cursor.h"
+#include "headers/particles.h"
+#include "headers/table.h"
+#include "headers/sun.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "headers/stb_image.h"
+Camera camera(glm::vec3(0.0f, 5.0f, 20.0f));
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+bool close = false;
 
-extern float lastX ,lastY;
 extern bool MouseDown,PointSelect,firstMouse;
 void mouse_callback_shape(GLFWwindow *window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
-extern float deltaTime;
-extern float lastFrame;
+
 void processInput(GLFWwindow *window);
-extern Camera camera;
 
-
+bool timeflow=false;
+bool partdisplay=false;
 bool notChange=true;
 bool framedisplay=false;
 bool framelock=false;
 bool texframedisplay=false;
 bool texframelock=false;
 DIYmodel diymodel;
+unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+unsigned int depthMapFBO;
+unsigned int depthMap;
 
-
-extern Shader ourShader,frameShader,skyShader;
+extern Shader ourShader,frameShader,skyShader,particleShader,simpleDepthShader;
 
 extern void Shader_Init();
 
 void display_shape(GLFWwindow *window){
-    glEnable(GL_FRAMEBUFFER_SRGB);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  //  glEnable(GL_FRAMEBUFFER_SRGB);
+   // glEnable(GL_BLEND);
+   // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -58,7 +68,32 @@ void display_shape(GLFWwindow *window){
     glLineWidth(5.0);
     glPointSize(15.0);   
     SkyBox skyBox;
-    glm::vec3 lightPos(12.0f, 30.0f, 5.0f);
+    Sun sun;
+    
+
+    glGenFramebuffers(1, &depthMapFBO);
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    
+    Table table;
+    ParticleSystem particleSys;
+    
     while(!glfwWindowShouldClose(window)){
         diymodel.remake();
         notChange=true;
@@ -68,6 +103,14 @@ void display_shape(GLFWwindow *window){
         float currentFrame = float(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        if(timeflow){
+        sun.ChangeTime(deltaTime);}
+        sun.Apply(ourShader,0);
+        sun.Apply(skyShader,1);
+        sun.Apply(particleShader,1);
+        glm::vec3 lightPos=sun.lightDir;
+
+        
 
         processInput(window);
         if(notChange==false)break;
@@ -77,12 +120,55 @@ void display_shape(GLFWwindow *window){
 
         glm::mat4 model = glm::mat4(1.0f);
         ourShader.setMat4("model",model);
+        ourShader.setVec3("viewPos",camera.Position);  
 
-       
+        glm::mat4 lightProjection, lightView;
+        glm::mat4 lightSpaceMatrix;
+        float near_plane = 1.0f, far_plane = 20.0f;
+        lightProjection = glm::ortho(-18.0f, 18.0f, -18.0f, 18.0f, near_plane, far_plane);
+        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        lightSpaceMatrix = lightProjection * lightView;
+        // render scene from light's point of view
+        simpleDepthShader.use();
+        simpleDepthShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        simpleDepthShader.setMat4("model", model);
+
+        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+        glCullFace(GL_FRONT);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+            glClear(GL_DEPTH_BUFFER_BIT);
+            table.Draw(simpleDepthShader,camera);       
+            diymodel.Draw(camera,simpleDepthShader,lightPos);            
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCullFace(GL_BACK);
+
+        // reset viewport
+        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ourShader.use();
+        ourShader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+
+        glActiveTexture(GL_TEXTURE7);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+        ourShader.setInt("shadowMap",7);
+        if(partdisplay){
+        particleSys.update(deltaTime);
+
+        particleSys.Draw(particleShader,camera);}
+
+        
+        table.Draw(ourShader,camera);       
+
+        //ourShader.setInt("shadowdisplay",0);
         diymodel.Draw(camera,ourShader,lightPos);
-        skyBox.Draw(camera,skyShader);
-        diymodel.DrawFrame(camera,frameShader,framedisplay);
-        diymodel.DrawTexFrame(camera,frameShader,texframedisplay);
+
+        skyBox.Draw(camera,skyShader);         
+        if(framedisplay)
+         diymodel.DrawFrame(camera,frameShader,framedisplay);
+        if(texframedisplay)
+         diymodel.DrawTexFrame(camera,frameShader,texframedisplay);
+        
+        
         
 
         glfwSwapBuffers(window);
@@ -199,6 +285,7 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 bool B_lock=false;
 bool Com_lock=false,Dot_lock=false;
 bool T_lock=false,R_lock=false;
+bool O_lock=false,P_lock=false;
 
 void processInput(GLFWwindow *window)
 {
@@ -238,7 +325,21 @@ void processInput(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_RELEASE)
         texframelock=false;
 
-   
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS&&O_lock==false)
+        {
+        timeflow=!timeflow;
+        O_lock=true;        
+        }
+    if (glfwGetKey(window, GLFW_KEY_O) == GLFW_RELEASE)
+        O_lock=false;
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS&&P_lock==false)
+        {
+        partdisplay=!partdisplay;
+        P_lock=true;        
+        }
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE)
+        P_lock=false;
  
     //读写文件
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
@@ -282,11 +383,6 @@ void processInput(GLFWwindow *window)
     }
      if (glfwGetKey(window, GLFW_KEY_R) == GLFW_RELEASE)
         R_lock=false;
-        
-
-    
-
-
 
      if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS&&Com_lock==false)
         {

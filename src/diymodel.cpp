@@ -20,6 +20,9 @@ string basic_texs[]={
     "..//..//resources//purple.png",
     "..//..//resources//purple_normal.png",
     "..//..//resources//stone.jpg",
+    "..//..//resources//stone2.jpg",
+    "..//..//resources//wood1.jpg",
+    "..//..//resources//wood2.jpg"
 
 };
 
@@ -531,13 +534,17 @@ void DIYmodel::save_file(){
 }
 
 void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
+    
 
         ourShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();       
+        glm::mat4 view = camera.GetViewMatrix(); 
+        glm::mat4 model;   
 
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+        ourShader.setMat4("model", model);
+         ourShader.setInt("shadowdisplay",1);
             
         ourShader.setVec3("viewPos",camera.Position);
         ourShader.setVec3("light.position", lightPos);
@@ -555,9 +562,9 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
         glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
         glEnableVertexAttribArray(2);
 
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE15);
         glBindTexture(GL_TEXTURE_2D, material.map);
-         ourShader.setInt("s",0);
+        ourShader.setInt("s",15);
 
         int texnum=textures.size();
         for(int i=0;i<texnum;i++){
@@ -581,6 +588,7 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
 
         //glPolygonMode(GL_FRONT_AND_BACK ,GL_LINE);
         glDrawArrays(GL_TRIANGLES, 0, totalindex);
+        ourShader.setInt("texnum",0);
 
 
 }
@@ -607,7 +615,6 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
         glm::mat4 view = camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
 
-        glDisable(GL_DEPTH_TEST);
         frameShader.use();
         frameShader.setMat4("projection", projection);
         frameShader.setMat4("view", view);
@@ -618,6 +625,7 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
         glEnableVertexAttribArray(0);
       
 
+        glDisable(GL_DEPTH_TEST);
 
         if(framedisplay)        
         glDrawArrays(GL_LINE_STRIP, 0, findex);
@@ -640,6 +648,8 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
       
         glEnable(GL_DEPTH_TEST);
 
+        fpvalues.clear();
+
 
 }
 
@@ -657,9 +667,10 @@ void DIYmodel::DrawTexFrame(Camera camera,Shader frameShader,bool texframedispla
         frameShader.setMat4("projection", projection);
         frameShader.setMat4("view", view);
         frameShader.setMat4("model", model);
-        frameShader.setVec3("color",glm::vec3(0.0,0.5,0.5));
+        
 
 for(int i=0;i<textures.size();i++){
+        frameShader.setVec3("color",glm::vec3(0.0,0.5,0.5));
         findex=load_circle(&fpvalues,i,true);
         
         glGenVertexArrays(1, &VAO2);
@@ -697,15 +708,15 @@ for(int i=0;i<textures.size();i++){
         if(texframedisplay&&i==active_tex)        
         glDrawArrays(GL_LINE_STRIP, 0, findex);
         
-         glDisable(GL_DEPTH_TEST);
-          frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
+        glDisable(GL_DEPTH_TEST);
+        frameShader.setVec3("color",glm::vec3(1.0,1.0,1.0));
         if(texframedisplay)     
         glDrawArrays(GL_POINTS, 0, 1);
 
         glEnable(GL_DEPTH_TEST);
 }
 
-
+        
 }
 
 
@@ -735,7 +746,7 @@ GLuint DIYmodel::load_texture(string s,DIYtexture &diytex){
     }
     stbi_image_free(data);
     diytex.map=texture;
-    diytex.type=0;
+    
     
     return texture;
 
@@ -744,7 +755,7 @@ GLuint DIYmodel::load_texture(string s,DIYtexture &diytex){
 void DIYmodel::switch_material(){
 
     material_idx+=1;
-    if(material_idx>=3) material_idx=0;
+    if(material_idx>=6) material_idx=0;
 }
 
 
@@ -778,6 +789,7 @@ void DIYmodel::add_texture(){
         newtx.r=0.4;
         newtx.repeat=4;
         newtx.name=szFile;
+
         active_tex=textures.size();
         textures.push_back(newtx);
         
