@@ -47,6 +47,8 @@ bool framedisplay=false;
 bool framelock=false;
 bool texframedisplay=false;
 bool texframelock=false;
+vector<DIYmodel> diymodels;
+int active_model_index=0;
 DIYmodel diymodel;
 unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 unsigned int depthMapFBO;
@@ -60,7 +62,9 @@ void display_shape(GLFWwindow *window){
   //  glEnable(GL_FRAMEBUFFER_SRGB);
    // glEnable(GL_BLEND);
    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
+    diymodels.clear();
+    diymodels.push_back(diymodel);
+    active_model_index=0;
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     Shader_Init();
@@ -95,7 +99,8 @@ void display_shape(GLFWwindow *window){
     ParticleSystem particleSys;
     
     while(!glfwWindowShouldClose(window)){
-        diymodel.remake();
+        
+       diymodels[active_model_index].remake();
         notChange=true;
     
     while (notChange&&!glfwWindowShouldClose(window))
@@ -138,7 +143,8 @@ void display_shape(GLFWwindow *window){
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
             glClear(GL_DEPTH_BUFFER_BIT);
             table.Draw(simpleDepthShader,camera);       
-            diymodel.Draw(camera,simpleDepthShader,lightPos);            
+            for(auto x:diymodels)
+            x.Draw(camera,simpleDepthShader,lightPos);            
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glCullFace(GL_BACK);
 
@@ -160,13 +166,16 @@ void display_shape(GLFWwindow *window){
         table.Draw(ourShader,camera);       
 
         //ourShader.setInt("shadowdisplay",0);
-        diymodel.Draw(camera,ourShader,lightPos);
+        for(auto x:diymodels)
+            x.Draw(camera,ourShader,lightPos);       
 
         skyBox.Draw(camera,skyShader);         
         if(framedisplay)
-         diymodel.DrawFrame(camera,frameShader,framedisplay);
+          for(auto x:diymodels)
+            x.DrawFrame(camera,frameShader,framedisplay);     
         if(texframedisplay)
-         diymodel.DrawTexFrame(camera,frameShader,texframedisplay);
+          for(auto x:diymodels)
+            x.DrawTexFrame(camera,frameShader,texframedisplay);  
         
         
         
@@ -193,27 +202,34 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
                 MouseDown=true;
                 
                 if(framedisplay){
-                point=diymodel.get_point(lastX,lastY,camera);
-                if(point>=0){
-                    cout<<"click point "<<point<<"at"<<lastX<<","<<lastY<<endl;
-                    PointSelect=true;
+                    for(int i=0;i<diymodels.size();i++){
+                        point=diymodels[i].get_point(lastX,lastY,camera);
+                        if(point>=0){
+                            
+                            PointSelect=true;
+                            active_model_index=i;
+                            break;
+                        }
+                        else{
+                            PointSelect=false;
+                        }}
                 }
-                else{
-                      cout<<"click no point "<<"at"<<lastX<<","<<lastY<<endl;
-                      PointSelect=false;
-                }}
 
                 if(texframedisplay){
-                    circle=diymodel.get_circle(lastX,lastY,camera,lor);
-                    if(circle>=0){
-                        cout<<"click circ "<<circle<<"at"<<lastX<<","<<lastY<<endl;
-                    PointSelect=true;
-                    lorSelection=lor;
+                for(int i=0;i<diymodels.size();i++){
+                    circle=diymodels[i].get_circle(lastX,lastY,camera,lor);
+                    if(circle>=0){                       
+                        PointSelect=true;
+                        lorSelection=lor;
+                        active_model_index=i;
+                        break;
                     }
-                    else{
-                        cout<<"click no point "<<"at"<<lastX<<","<<lastY<<endl;
+                    else{                      
                       PointSelect=false;
-                }}
+                    }
+                }
+                
+                }
 
                 
                 
@@ -221,21 +237,23 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
             case GLFW_MOUSE_BUTTON_MIDDLE:
             //中键,创建新节点
             if(framedisplay){
-                point=diymodel.get_line_start_point(lastX,lastY,camera);
+
+                
+                point=diymodels[active_model_index].get_line_start_point(lastX,lastY,camera);
                 if(point>=0){
-                    diymodel.split_point(point);
+                    diymodels[active_model_index].split_point(point);
                     notChange=false;
                 }
-                else{
-                      
-                }}
+                
+                
+                }
                 break;
             case GLFW_MOUSE_BUTTON_RIGHT:
             //右键，删除节点
                 if(framedisplay){
-                point=diymodel.get_point(lastX,lastY,camera);
+                point=diymodels[active_model_index].get_point(lastX,lastY,camera);
                 if(point>=0){
-                    diymodel.remove_point(point);
+                    diymodels[active_model_index].remove_point(point);
                     notChange=false;
                 }
                 else{
@@ -274,17 +292,29 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 
     if(PointSelect){
         if(framedisplay)
-        diymodel.modify_point(xoffset,yoffset,camera);
+
+        
+        if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
+            diymodels[active_model_index].modify_offset(xoffset,yoffset,camera,0);
+        else 
+        if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS)
+            diymodels[active_model_index].modify_offset(xoffset,yoffset,camera,1);
+        else 
+        if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+            diymodels[active_model_index].modify_offset(xoffset,yoffset,camera,2);
+        else
+            diymodels[active_model_index].modify_point(xoffset,yoffset,camera);
         if(texframedisplay)
-        diymodel.modify_circle(xoffset,yoffset,camera,lorSelection);
+            diymodels[active_model_index].modify_circle(xoffset,yoffset,camera,lorSelection);
         notChange=false;
+        
         cout<<"selecting"<<endl;
     }
 }
 
-bool B_lock=false;
+bool B_lock=false,Del_lock=false;
 bool Com_lock=false,Dot_lock=false;
-bool T_lock=false,R_lock=false;
+bool T_lock=false,R_lock=false,V_lock=false;
 bool O_lock=false,P_lock=false;
 
 void processInput(GLFWwindow *window)
@@ -343,15 +373,35 @@ void processInput(GLFWwindow *window)
  
     //读写文件
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
-        diymodel.load_from_file();
+        DIYmodel newdiymodel;
+        newdiymodel.load_from_file();
+        active_model_index=diymodels.size();
+        diymodels.push_back(newdiymodel);
+        
         notChange=false;
         }
     if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
-        diymodel.save_file();
+        diymodels[active_model_index].save_file();
 
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS){
-        diymodel.add_texture();
+        diymodels[active_model_index].add_texture();
         notChange=false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS&&!Del_lock){
+        if(diymodels.size()>active_model_index)
+        {
+        
+            diymodels.erase(diymodels.begin()+active_model_index);
+            active_model_index=0;
+             
+           
+            Del_lock=true;
+        }
+        
+        notChange=false;
+    }
+    if(glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_RELEASE){
+        Del_lock=false;
     }
 
     
@@ -359,7 +409,7 @@ void processInput(GLFWwindow *window)
     //材质选项
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS&&B_lock==false)
-        {diymodel.switch_material();
+        {diymodels[active_model_index].switch_material();
         notChange=false;
         B_lock=true;
         
@@ -368,16 +418,24 @@ void processInput(GLFWwindow *window)
         B_lock=false;
 
     if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS&&!T_lock){
-        diymodel.trans_tex_type();
+        diymodels[active_model_index].trans_tex_type();
         notChange=false;
         T_lock=true;
     }
      if (glfwGetKey(window, GLFW_KEY_T) == GLFW_RELEASE)
         T_lock=false;
+
+     if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS&&!V_lock){
+        diymodels[active_model_index].reverse_tex();
+        notChange=false;
+        V_lock=true;
+    }
+     if (glfwGetKey(window, GLFW_KEY_V) == GLFW_RELEASE)
+        V_lock=false;
         
         
     if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS&&!R_lock){
-        diymodel.remove_texture();
+        diymodels[active_model_index].remove_texture();
         notChange=false;
         R_lock=true;
     }
@@ -386,7 +444,7 @@ void processInput(GLFWwindow *window)
 
      if (glfwGetKey(window, GLFW_KEY_COMMA) == GLFW_PRESS&&Com_lock==false)
         {
-        diymodel.add_repeat(false);
+        diymodels[active_model_index].add_repeat(false);
         notChange=false;
         Com_lock=true;
         }
@@ -395,7 +453,7 @@ void processInput(GLFWwindow *window)
 
      if (glfwGetKey(window, GLFW_KEY_PERIOD) == GLFW_PRESS&&Dot_lock==false)
         {
-        diymodel.add_repeat(true);
+        diymodels[active_model_index].add_repeat(true);
         notChange=false;
         Dot_lock=true;
         }

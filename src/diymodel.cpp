@@ -35,9 +35,16 @@ float defPoints[] = {
     4.0, 2.0, 0,
     4.0, 4.0, 0,
     3.0, 6.0, 1,
-    2.0, 7.0, 0,
-    1.0, 5.0, 0,
-	0.0, 3.0, 1,
+    2.0, 6.5, 0,
+    1.0, 7.0, 0,
+	0.0, 7.0, 1,
+	
+    	
+};
+
+float shiness[] = {
+   
+   16.0f,256.0f,64.0f,64.0f,32.0f,32.0f
 	
     	
 };
@@ -82,7 +89,7 @@ int DIYmodel::load_model(vector<float>* pvalues,vector<float>* tvalues,vector<fl
                 tvalues->push_back(tex[ind[i]].s);
                 tvalues->push_back(tex[ind[i]].t);
                 nvalues->push_back(norm[ind[i]].x);
-                nvalues->push_back(norm[ind[i]].y);
+                nvalues->push_back(norm[ind[i]].y); 
                 nvalues->push_back(norm[ind[i]].z);
                 
             }
@@ -119,6 +126,7 @@ void DIYmodel::init(){
     active_point=-1;
     active_tex=0;
     material_idx=0;
+    offset=glm::vec3(0,0,0);
     for(int i=0;i<10;i++){
         vertices.push_back(glm::vec3(defPoints[3*i],defPoints[3*i+1],defPoints[3*i+2]));
     }
@@ -159,7 +167,7 @@ void DIYmodel::remake(){
         }
     }
 
-    float offset=0;
+    float off=0;
 
     for(int i=0;i+3<vertices.size() ;i+=3){
         vector<glm::vec2> vec;
@@ -167,10 +175,10 @@ void DIYmodel::remake(){
         for(int j=0;j<4;j++)
             vec.push_back(glm::vec2(vertices[i+j].x,vertices[i+j].y));
         
-        float l=offset;
+        float l=off;
         float r=l+(lengths[i]+lengths[i+1]+lengths[i+2])/totl;
         BezierFace bf=BezierFace(vec,l,r);
-        offset=r;
+        off=r;
         
         faces.push_back(bf);
     }
@@ -208,7 +216,10 @@ bool clamp(float x,float y,float diff){
 
 }
 
-glm::vec4 wild_screen_baroque(glm::vec4 pos,glm::mat4 view,glm::mat4 projection){
+glm::vec4 wild_screen_baroque(glm::vec4 pos,glm::mat4 view,glm::mat4 projection,glm::mat4 model){
+
+       
+        pos=model*pos;
         pos=view*pos;
         pos=projection*pos;
 
@@ -237,7 +248,7 @@ void DIYmodel::active(int index){
 void DIYmodel::modify_point(float dx,float dy,Camera camera){
     if(active_point<0) return;
     else{
-        float z=camera.Position.z;
+        float z=camera.Position.z-offset.z;
         float dist=1000/z;
         if(z<0){
             vertices[active_point].y+=dy/(-dist);
@@ -248,9 +259,33 @@ void DIYmodel::modify_point(float dx,float dy,Camera camera){
             vertices[active_point].x+=dx/(dist);
         }
         
+    }
+}
 
-        
-        
+//移动整体
+void DIYmodel::modify_offset(float dx,float dy,Camera camera,int dimension){
+    if(active_point<0) return;
+    else{
+        float z=camera.Position.z-offset.z;
+        float dist=1000/z;
+
+        if(dimension==0){
+            offset.x+=dx/(dist);
+        }
+        if(dimension==1){
+        if(z<0){
+            offset.y+=dy/(-dist);
+        }
+        else{
+            offset.y+=dy/(dist);
+        }}
+        if(dimension==2){
+        if(z<0){
+            offset.z-=dy/(dist);
+        }
+        else{
+            offset.z-=dy/(dist);
+        }}
         
     }
 }
@@ -330,11 +365,13 @@ void DIYmodel::modify_circle(float dx,float dy,Camera camera,bool lor){
 int DIYmodel::get_point(float x,float y,Camera camera){
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
+     glm::mat4 model;
+        model=glm::translate(model,offset);   
     float zc=camera.Position.z;
     
     for(int i=0;i<vertices.size();i++){
         glm::vec4 pos(vertices[i].x,vertices[i].y,0.0,1.0);
-        pos=wild_screen_baroque(pos,view,projection);
+        pos=wild_screen_baroque(pos,view,projection,model);
         
   //     cout<<"point "<<i<<"at"<<pos.x<<","<<pos.y<<endl;
         
@@ -354,14 +391,16 @@ int DIYmodel::get_point(float x,float y,Camera camera){
 int DIYmodel::get_line_start_point(float x,float y,Camera camera){
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
+     glm::mat4 model;
+        model=glm::translate(model,offset);   
     float zc=camera.Position.z;
     
     for(int i=0;i+1<vertices.size();i++){
         glm::vec4 pos0(vertices[i].x,vertices[i].y,0.0,1.0);
-        pos0=wild_screen_baroque(pos0,view,projection);
+        pos0=wild_screen_baroque(pos0,view,projection,model);
 
         glm::vec4 pos1(vertices[i+1].x,vertices[i+1].y,0.0,1.0);
-        pos1=wild_screen_baroque(pos1,view,projection);
+        pos1=wild_screen_baroque(pos1,view,projection,model);
         
   //     cout<<"point "<<i<<"at"<<pos.x<<","<<pos.y<<endl;
         
@@ -379,6 +418,8 @@ int DIYmodel::get_line_start_point(float x,float y,Camera camera){
 int DIYmodel::get_circle(float x,float y,Camera camera,bool &lor){
     glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), float(SCR_WIDTH) / SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = camera.GetViewMatrix();
+     glm::mat4 model;
+        model=glm::translate(model,offset);   
     float zc=camera.Position.z;
 
     float yl,yr,r;
@@ -393,7 +434,7 @@ int DIYmodel::get_circle(float x,float y,Camera camera,bool &lor){
             }
         }
         glm::vec4 pos(r,yl,0.0,1.0);
-        pos=wild_screen_baroque(pos,view,projection);
+        pos=wild_screen_baroque(pos,view,projection,model);
         if(clamp(pos.y,y,10.0)){
             lor=true;
             active_tex=i;
@@ -407,7 +448,7 @@ int DIYmodel::get_circle(float x,float y,Camera camera,bool &lor){
             }
         }
         pos=glm::vec4(r,yr,0.0,1.0);
-        pos=wild_screen_baroque(pos,view,projection);
+        pos=wild_screen_baroque(pos,view,projection,model);
         if(clamp(pos.x,x,10.0)&&clamp(pos.y,y,10.0)){
         
             lor=false;
@@ -469,7 +510,7 @@ void DIYmodel::load_from_file(){
 
         for (int i=0;i<size;i++)
         {
-            is>>dt.type>>dt.repeat>>dt.l>>dt.r>>dt.name;
+            is>>dt.type>>dt.repeat>>dt.reverse>>dt.l>>dt.r>>dt.name;
             load_texture(dt.name,dt);
             textures.push_back(dt);
         }
@@ -518,7 +559,7 @@ void DIYmodel::save_file(){
 
         os<<"texs_begin"<<' '<<textures.size()<<endl;
         for(auto x:textures){
-            os<<x.type<<' '<<x.repeat<<' '<<x.l<<' '<<x.r<<' '<<x.name<<endl;
+            os<<x.type<<' '<<x.repeat<<' '<<x.reverse<<' '<<x.l<<' '<<x.r<<' '<<x.name<<endl;
         }
 
         os<<"texs_end"<<endl;
@@ -539,15 +580,19 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
         ourShader.use();
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix(); 
-        glm::mat4 model;   
+        glm::mat4 model;
+        model=glm::translate(model,offset);   
+
+        
 
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
         ourShader.setMat4("model", model);
-         ourShader.setInt("shadowdisplay",1);
+        ourShader.setInt("shadowdisplay",1);
             
         ourShader.setVec3("viewPos",camera.Position);
         ourShader.setVec3("light.position", lightPos);
+        ourShader.setFloat("material.shiness",shiness[material_idx]);
 
     
         glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
@@ -578,6 +623,7 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
             ourShader.setFloat("trange_r["+to_string(i)+"]",textures[i].r);
             ourShader.setInt("texs["+to_string(i)+"]",i+1);
             ourShader.setInt("repeat["+to_string(i)+"]",textures[i].repeat);
+            ourShader.setInt("reverse["+to_string(i)+"]",textures[i].reverse);
             ourShader.setInt("type["+to_string(i)+"]",textures[i].type);
         }
         
@@ -589,6 +635,8 @@ void DIYmodel::Draw(Camera camera,Shader ourShader,glm::vec3 lightPos){
         //glPolygonMode(GL_FRONT_AND_BACK ,GL_LINE);
         glDrawArrays(GL_TRIANGLES, 0, totalindex);
         ourShader.setInt("texnum",0);
+        model=glm::mat4(1.0);
+        ourShader.setMat4("model", model);
 
 
 }
@@ -613,7 +661,9 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
+         glm::mat4 model;
+       model=glm::translate(model,offset);   
+
 
         frameShader.use();
         frameShader.setMat4("projection", projection);
@@ -649,6 +699,8 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
         glEnable(GL_DEPTH_TEST);
 
         fpvalues.clear();
+         model=glm::mat4(1.0);
+        frameShader.setMat4("model", model);
 
 
 }
@@ -656,11 +708,11 @@ void DIYmodel::DrawFrame(Camera camera,Shader frameShader,bool framedisplay){
 void DIYmodel::DrawTexFrame(Camera camera,Shader frameShader,bool texframedisplay){
         fpvalues.clear();
         if(textures.size()==0) return;
-        
-
+    
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 model;
+        model=glm::translate(model,offset);    
 
        
         frameShader.use();
@@ -715,6 +767,9 @@ for(int i=0;i<textures.size();i++){
 
         glEnable(GL_DEPTH_TEST);
 }
+
+        model=glm::mat4(1.0);
+        frameShader.setMat4("model", model);
 
         
 }
@@ -788,6 +843,7 @@ void DIYmodel::add_texture(){
         newtx.l=0.3;
         newtx.r=0.4;
         newtx.repeat=4;
+        newtx.reverse=0;
         newtx.name=szFile;
 
         active_tex=textures.size();
@@ -810,6 +866,9 @@ void DIYmodel::add_repeat(bool t){
 
 void DIYmodel::trans_tex_type(){
     textures[active_tex].type=1-textures[active_tex].type;
+}
+void DIYmodel::reverse_tex(){
+    textures[active_tex].reverse=1-textures[active_tex].reverse;
 }
 
 void DIYmodel::remove_texture(){

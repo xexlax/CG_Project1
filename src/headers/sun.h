@@ -47,10 +47,12 @@ void Sun::Apply(Shader shader,bool sky){
     }
     else{
         //if(time>=18.0f||time<6.0f) shader.setVec3("light.direction",moonlightDir);
-      shader.setVec3("light.direction",lightDir);
+        shader.use();
+        shader.setVec3("light.direction",lightDir);
         shader.setVec3("light.ambient", ambientColor);
         shader.setVec3("light.diffuse", diffuseColor);
         shader.setVec3("light.specular",specularColor);
+        shader.setFloat("material.shiness",256.0f);
 
     }
 }
@@ -89,9 +91,9 @@ void Sun::refresh(){
   
     }
    
-    ambientColor=glm::vec3(0.1*r, 0.1*g, 0.1*b);
-    diffuseColor=glm::vec3(0.6*r, 0.6*g, 0.6*b);
-    specularColor=glm::vec3(0.8*r, 0.8*g, 0.8*b);
+    ambientColor=glm::vec3(0.4*r, 0.4*g, 0.4*b);
+    diffuseColor=glm::vec3(0.7*r, 0.7*g, 0.7*b);
+    specularColor=glm::vec3(0.9*r, 0.9*g, 0.9*b);
     skyColor=glm::vec3(1.0f*r,1.0f*g,1.0f*b);
 
 }

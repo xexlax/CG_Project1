@@ -191,7 +191,6 @@ void ParticleSystem::Draw(Shader s,Camera camera){
             model = glm::rotate(model, particles[i].rotation_y, glm::vec3(0,0,1));
 	    model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
         s.setMat4("model",model);
-
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0,6);
         //glDrawElements(GL_POINTS, 6, GL_UNSIGNED_INT, 0);

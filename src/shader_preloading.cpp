@@ -11,8 +11,8 @@ void Shader_Init(){
      particleShader.use();
      particleShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
     
-    // ourShader.use();
-     ourShader.setFloat("material.shininess", 16.0f);
+    ourShader.use();
+    ourShader.setFloat("material.shininess", 128.0f);
     // ourShader.setVec3("light.ambient", 0.3f, 0.3f, 0.3f);
     // ourShader.setVec3("light.diffuse", 0.6f, 0.6f, 0.65f);
     // ourShader.setVec3("light.specular", 0.8f, 0.8f, 0.8f);

@@ -26,6 +26,7 @@ uniform Light light;
 uniform int texnum;
 uniform float trange_l[10];
 uniform  int repeat[10];
+uniform  int reverse[10];
 uniform float trange_r[10];
 uniform int type[10];
 uniform int shadowdisplay;
@@ -73,26 +74,55 @@ void main()
     for(int i=0;i<texnum;i++){
           vec2 TexCoordV=TexCoord;
           float len=trange_r[i]-trange_l[i];
+
+          
+
           if(TexCoordV.y>trange_l[i]&&TexCoordV.y<trange_r[i]){
+               TexCoordV.y=(TexCoordV.y-trange_l[i])/len;
+               
+
+              
 
               if(type[i]==0){
                   //环绕模式
-                  TexCoordV.y=(TexCoordV.y-trange_l[i])/len;
                   TexCoordV.x=(repeat[i]*TexCoordV.x);
+
+                  if(reverse[i]==1){
+                  TexCoordV.y=1-TexCoordV.y;
+                  TexCoordV.x=1-TexCoordV.x;
+                }
 
               }
               else{
-              
                   //中心模式
-                  TexCoordV.y=(TexCoordV.y-trange_l[i])/len;
                   float theta= TexCoordV.x*(2*3.14159);
                   float r=(TexCoordV.y)/2;
 
-                  TexCoordV.x=r*cos(theta)+0.5;
-                  TexCoordV.y=r*sin(theta)+0.5;
+                  
+
+                  
+                  if(reverse[i]==1){
+                      TexCoordV.x=r*cos(theta)+0.5;
+
+                        TexCoordV.y=1-r*sin(theta)+0.5;
+                  
+                    }
+                    else{
+                        r=(1-TexCoordV.y)/2;
+                        
+
+                        TexCoordV.x=r*cos(theta)+0.5;
+
+                        TexCoordV.y=r*sin(theta)+0.5;
+
+                    }
+                  
+
+                  
                   
                 
               }
+              
 
               texcolor*=vec3(texture(texs[i], TexCoordV));
           }
