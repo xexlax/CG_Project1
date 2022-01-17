@@ -140,9 +140,7 @@ float skyboxVertices[] = {
     }
 
     void SkyBox::Draw(Camera camera,Shader skyShader){
-
         skyShader.setInt("skybox", 0);
-        
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
         skyShader.use();

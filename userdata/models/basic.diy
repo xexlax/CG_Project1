@@ -1,0 +1,15 @@
+material
+0
+vertices_begin 10
+0 0 1
+1 0 0
+2 0 0
+3 0 1
+4 2 0
+4 4 0
+3 6 1
+2 6.5 0
+1 7 0
+0 7 1
+texs_begin 0
+texs_end

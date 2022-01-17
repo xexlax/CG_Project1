@@ -3,15 +3,21 @@
 #include <GLFW/glfw3.h>
 #include <string>
 
-
 #include "headers/settings.h"
+#include "headers/camera.h"
+extern Camera camera;
+extern float lastX, lastY, deltaTime, lastFrame;
+extern bool firstMouse;
+bool MouseDown = false;
+bool PointSelect = false;
 
+void display_shape(GLFWwindow *window);
 
-void render_model(GLFWwindow *window, std::string dir);
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+extern void render_model(GLFWwindow *window, std::string dir);
 
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+extern void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 int main()
 {
@@ -29,7 +35,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CGProject", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "CGProject", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -41,19 +47,33 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
 
-
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    render_model(window,"lumine\\lumine.pmx");
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    display_shape(window);
 
+    //render_model(window,"lumine\\lumine.pmx");
     //render_model(window,"paimon\\paimon.pmx");
+    // render_modeling(window);
 
-    
     glfwTerminate();
     return 0;
 }
 
+
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+
+    glViewport(0, 0, width, height);
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(float(yoffset));
+}

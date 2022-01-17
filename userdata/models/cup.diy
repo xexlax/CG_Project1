@@ -1,0 +1,17 @@
+material
+1
+vertices_begin 10
+0 0 1
+0.731068 -0.0108449 0
+1.39762 0.0371357 0
+1.75492 0.0442387 1
+2.22165 1.31342 0
+1.89238 1.51285 0
+1.68386 1.32081 0
+1.45402 0.688835 0
+1.00061 0.706166 0
+-0.0180348 0.825178 1
+texs_begin 2
+1 4 0 0.745698 0.999097 D:\Study\OpenGL2020.12\VSCproj\resources\texture\top2.jpg
+0 11 0 0.3 0.4 D:\Study\OpenGL2020.12\VSCproj\resources\texture\fu.jpg
+texs_end

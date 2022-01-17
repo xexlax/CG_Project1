@@ -33,12 +33,12 @@ string UTF8ToGB(const char* str)
 	WCHAR *strSrc;
 	LPSTR szRes;
  
-	//Х▌╥Е╬≈Д╦╢Ф≈╤Е▐≤И┤▐Г └Е╓╖Е╟▐
+	//╩Я╣цаый╠╠Да©╣д╢Сп║
 	int i = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
 	strSrc = new WCHAR[i + 1];
 	MultiByteToWideChar(CP_UTF8, 0, str, -1, strSrc, i);
  
-	//Х▌╥Е╬≈Д╦╢Ф≈╤Е▐≤И┤▐Г └Е╓╖Е╟▐
+	//╩Я╣цаый╠╠Да©╣д╢Сп║
 	i = WideCharToMultiByte(CP_ACP, 0, strSrc, -1, NULL, 0, NULL, NULL);
 	szRes = new CHAR[i + 1];
 	WideCharToMultiByte(CP_ACP, 0, strSrc, -1, szRes, i, NULL, NULL);
